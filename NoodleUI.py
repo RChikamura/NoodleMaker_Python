@@ -38,10 +38,8 @@ class NoodleInterface:
         self.mode = 0 # 念の為変数にする
         self.renderUI(self.root, 0) # 待機画面で開始する
         self.root.bind("<Map>", lambda event: self.commandEntry.focus_set())
-        self.root.after(1000, self.commandEntry.focus_set())  # 100ミリ秒後に focus_set を呼ぶ
-        self.root.after(100, lambda:print("Current focus:", self.root.focus_get()))
-        # ウィンドウの装飾をなくす（フチなしにする）
-        self.root.after(200, self.root.overrideredirect(True))
+        self.root.after(100, self.commandEntry.focus_set())  # 100ミリ秒後に focus_set を呼ぶ
+        self.root.after(1000, lambda:print("Current focus:", self.root.focus_get()))
         self.root.mainloop() # ウィンドウを表示
 
     # メインウィンドウの作成と設定
@@ -51,6 +49,9 @@ class NoodleInterface:
 
         # ウィンドウのサイズ設定
         root.geometry('1280x720+0+0')
+
+        # ウィンドウの装飾をなくす（フチなしにする）
+        root.overrideredirect(True)
 
         # ウィンドウの背景色
         root.configure(bg=bg_color)
@@ -96,7 +97,7 @@ class NoodleInterface:
 
         # 非表示のEntryを作成
         self.commandEntry = tk.Entry(target)
-        self.commandEntry.place(x=1080, y=100, width=200, height=50)  # ウィンドウ外に配置
+        self.commandEntry.place(x=-300, y=-100, width=200, height=50)  # ウィンドウ外に配置
         self.commandEntry.bind('<Return>', lambda event: self.handler.on_command_enter(target, self.commandEntry, tk.END, event)) # コマンド処理
 
 
