@@ -37,6 +37,7 @@ class NoodleInterface:
         self.handler = nhdl(self, csv_manager) # ハンドラの初期化
         self.mode = 0 # 念の為変数にする
         self.renderUI(self.root, 0) # 待機画面で開始する
+        self.root.bind("<Map>", lambda event: self.commandEntry.focus_set())
         self.root.after(100, self.commandEntry.focus_set())  # 100ミリ秒後に focus_set を呼ぶ
         self.root.mainloop() # ウィンドウを表示
 
