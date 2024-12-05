@@ -96,8 +96,8 @@ class NoodleInterface:
         self.homeButton = tk.Button(target, text='Home', fg=fg_button, bg=bg_button, activebackground=bg_button_active, relief='flat', font=('Noto Sans JP', 20), command=lambda:self.renderUI(target, 0))
 
         # 非表示のEntryを作成
-        self.commandEntry = tk.Entry(target, font=tkFont.Font(family='Noto Sans JP', size=10))
-        self.commandEntry.place(x=1080, y=100, width=200, height=20)  # ウィンドウ外に配置
+        self.commandEntry = tk.Entry(target)
+        self.commandEntry.place(x=1080, y=100, width=200, height=50)  # ウィンドウ外に配置
         self.commandEntry.bind('<Return>', lambda event: self.handler.on_command_enter(target, self.commandEntry, tk.END, event)) # コマンド処理
 
 
