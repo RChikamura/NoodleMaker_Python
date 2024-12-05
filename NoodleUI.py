@@ -14,9 +14,6 @@ bg_button_sub = bg_button  # サブウィンドウのボタンの背景色
 bg_button_active = '#ffcc80'  # アクティブ時のボタン背景色（少し明るめのオレンジ）
 bg_button_active_sub = bg_button_active  # サブウィンドウのアクティブ時のボタン背景色
 bg_button_disable = '#eeeeee'  # 無効化ボタンの背景色
-border_button = '#4e342e'  # ボタンの枠線色
-border_button_sub = border_button  # サブウィンドウのボタンの枠線色
-border_button_disable = '#cccccc'  # 無効化ボタンの枠線色
 fg_text = '#4e342e'  # 文字色（テキスト）
 fg_text_sub = fg_text  # サブウィンドウの文字色（テキスト）
 fg_button = '#4e342e'  # ボタン文字色
@@ -92,9 +89,9 @@ class NoodleInterface:
         self.waterText = tk.Label(target, text=self.waterAmount, fg=fg_text, bg=bg_color)
 
         # submitボタン(次へ進む、給湯スタート)
-        self.submitButton = tk.Button(target, text='注湯量決定', fg=fg_button, bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='solid', borderwidth=1, command=lambda:self.handler.on_submit_click(target))
+        self.submitButton = tk.Button(target, text='注湯量決定', fg=fg_button, bg=bg_button, activebackground=bg_button_active, relief='flat', command=lambda:self.handler.on_submit_click(target))
         # Homeボタン(待機画面へ)
-        self.homeButton = tk.Button(target, text='Home', fg=fg_button, bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='solid', borderwidth=1, font=('Noto Sans JP', 20), command=lambda:self.renderUI(target, 0))
+        self.homeButton = tk.Button(target, text='Home', fg=fg_button, bg=bg_button, activebackground=bg_button_active, relief='flat', font=('Noto Sans JP', 20), command=lambda:self.renderUI(target, 0))
 
         # 非表示のEntryを作成
         self.commandEntry = tk.Entry(target)
@@ -105,13 +102,13 @@ class NoodleInterface:
 
     # 水量調整ボタンを動的に追加するための関数
     def add_adjust_button(self, target, label, amount):
-        button = tk.Button(target, text=label, fg=fg_button, bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='solid', borderwidth=1, command=lambda:self.handler.on_waterAdjust_click(amount))
+        button = tk.Button(target, text=label, fg=fg_button, bg=bg_button, activebackground=bg_button_active, relief='flat', command=lambda:self.handler.on_waterAdjust_click(amount))
         return button
 
     # ボタンを無効化し、一定時間後に有効化する関数
     def disable_button_temporarily(self, target, button, delay):
-        button.config(state=tk.DISABLED, fg=fg_button_disable, bg=bg_button_disable, highlightbackground=border_button_disable)  # ボタンを無効化
-        target.after(delay, lambda: button.config(state=tk.NORMAL, fg=fg_text, bg=bg_button, highlightbackground=border_button))  # delayミリ秒後にボタンを有効化
+        button.config(state=tk.DISABLED, fg=fg_button_disable, bg=bg_button_disable)  # ボタンを無効化
+        target.after(delay, lambda: button.config(state=tk.NORMAL, fg=fg_text, bg=bg_button))  # delayミリ秒後にボタンを有効化
 
     # 各表示状況における表示の配置をする関数
     def renderUI(self, target, mode):
@@ -125,11 +122,11 @@ class NoodleInterface:
                 self.timeText.place(x=10, y=116)
                 self.genreText.place(x=10, y=172)
                 # 各種ボタン等
-                self.buttonLD.place(x=140, y=250, width=200, height=100)
-                self.buttonSD.place(x=340, y=250, width=200, height=100)
-                self.waterText.place(x=540, y=250, width=200, height=100)
-                self.buttonSI.place(x=740, y=250, width=200, height=100)
-                self.buttonLI.place(x=940, y=250, width=200, height=100)
+                self.buttonLD.place(x=141, y=250, width=198, height=100)
+                self.buttonSD.place(x=341, y=250, width=198, height=100)
+                self.waterText.place(x=541, y=250, width=198, height=100)
+                self.buttonSI.place(x=741, y=250, width=198, height=100)
+                self.buttonLI.place(x=941, y=250, width=198, height=100)
                 self.submitButton.config(text='注湯量決定', command=lambda:self.handler.on_submit_click(target))
                 self.submitButton.place(x=440, y=375, width=400, height=125)
                 self.homeButton.place(x=1180, y=0, width=100, height=50)
@@ -293,5 +290,5 @@ class NoodleInterface:
             message = tk.Label(content_frame, text=text, fg=fg_text_sub, bg=bg_color_sub)
         message.pack(expand=True)
         # 閉じるボタンを配置
-        close_button = tk.Button(content_frame, text='閉じる', fg=fg_button_sub, bg=bg_button_sub, activebackground=bg_button_active_sub, highlightbackground=border_button_sub, relief='solid', borderwidth=1, command=self.sub_window.destroy)
+        close_button = tk.Button(content_frame, text='閉じる', fg=fg_button_sub, bg=bg_button_sub, activebackground=bg_button_active_sub, relief='flat', command=self.sub_window.destroy)
         close_button.pack(expand=True)
