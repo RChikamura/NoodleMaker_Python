@@ -1,10 +1,11 @@
 import time
-import gpio_motor_sensor as gms
+from gpio_motor_sensor import NoodleGPIO as nio
 
 class Handler:
     def __init__(self, interface, csv_manager):
         self.UI = interface  # NoodleInterfaceのインスタンス
         self.csv = csv_manager  # NoodleCSVのインスタンス
+        self.gms = nio(self.UI.root)
 
     # ボタンを押したときの機能
     # 水量調整
@@ -24,15 +25,16 @@ class Handler:
     # スタート
     def on_start_click(self, target):
         # 扉が開いている場合
-        if not gms.sensorInput():
+        if not self.gms.sensorInput():
+            self.alert_open(target)
             self.UI.stateMessage.config(text="扉が開いています。\n閉じてください。")
             return  # ここで処理終了
 
         # ポンプが停止中の場合
-        if gms.motorStopped:
+        if self.gms.motorStopped:
             self.start_dispensing(target)
         else:
-            self.stop_dispensing()
+            self.stop_dispensing(target)
 
     # 給湯を開始する関数
     def start_dispensing(self, target):
@@ -40,41 +42,49 @@ class Handler:
         self.UI.startTime = time.time() * 1000
         startRemain = self.UI.remain
 
-        gms.startMotor()  # モーター起動
+        self.gms.startMotor()  # モーター起動
         self.checkMotorState(target, startRemain)  # 状態を監視
         self.UI.disable_button_temporarily(target, self.UI.submitButton, 2000)
         self.UI.submitButton.config(text="Stop")  # ボタンを「Stop」に変更
 
     # 給湯を停止する関数
-    def stop_dispensing(self):
-        gms.stopMotor()  # モーター停止
+    def stop_dispensing(self, target):
+        self.gms.stopMotor()  # モーター停止
         self.UI.stateMessage.config(text=f"給湯中 残り {int(self.UI.remain / 1000)}秒\n再開する場合は、\nStartボタンをタップ")
-        self.UI.disable_button_temporarily(self.UI.submitButton, 2000)
+        self.UI.disable_button_temporarily(target, self.UI.submitButton, 2000)
         self.UI.submitButton.config(text="Start")  # ボタンを「Start」に変更
 
     # モーターの状態を監視するための関数
     def checkMotorState(self, target, startRemain):
         # 残り時間が 0 なら終了処理
         if self.UI.remain <= 0:
-            gms.stopMotor()
+            self.gms.stopMotor()
             self.setup_qr_screen(target)  # QRコード画面に遷移
             return
 
         # 扉が開いた場合
-        if not gms.sensorInput():
-            gms.stopMotor()
+        if not self.gms.sensorInput():
+            self.gms.stopMotor()
+            self.alert_open(target)
             self.UI.stateMessage.config(text=f"給湯中 残り {int(self.UI.remain / 1000)}秒\n扉を閉じてから、\nStartボタンをタップ")
             self.UI.submitButton.config(text="Start")  # ボタンを「Start」に戻す
             return
 
         # 給湯中の場合は次のチェックをスケジュール
-        self.UI.remain = startRemain - (time.time() * 1000 - self.UI.startTime)
-        self.UI.stateMessage.config(text=f"給湯中 残り {int(self.UI.remain / 1000)}秒\n一時停止する場合は、\nStopボタンをタップ")
-        self.UI.root.after(100, lambda: self.checkMotorState(target, startRemain))
+        if not self.gms.motorStopped:
+            self.UI.remain = startRemain - (time.time() * 1000 - self.UI.startTime)
+            self.UI.stateMessage.config(text=f"給湯中 残り {int(self.UI.remain / 1000)}秒\n一時停止する場合は、\nStopボタンをタップ")
+            self.UI.root.after(100, lambda: self.checkMotorState(target, startRemain))
+
+    # 扉が開いている警告を出す関数
+    def alert_open(self, target):
+        message = '扉が開いています。\n閉じてください。'
+        self.UI.open_sub_window(target, message)
 
     # 待機画面に戻る処理
     def returnWelcome(self, target):
-        self.UI.renderUI(target, 0)
+        if self.UI.mode == 3:
+            self.UI.renderUI(target, 0)
         self.cleanup_qr_events(target)
 
     # QRコード画面のセットアップ
@@ -96,18 +106,14 @@ class Handler:
 
     # Enterキーが押されたときにEntryの値を取得
     def on_command_enter(self, target, entry, end, event): # end引数は、このファイルでtkinterをimportしておらず、tk.ENDが使えないために代理で使用
+        # サブウィンドウが既に存在する場合は一旦閉じる
+        if self.UI.sub_window is not None and self.UI.sub_window.winfo_exists():
+            self.UI.sub_window.destroy()
+
         command = entry.get()
         entry.delete(0, end)  # 入力欄をクリア
         match command:
-            case '99999995':
-                # ウィンドウが非表示なら
-                if target.state() == 'withdrawn':
-                    # 終了
-                    target.destroy()
-                else:
-                    # GUIを消す
-                    target.withdraw()
-            case 'exit':
+            case 'exit' | '99999995':
                 # 終了
                 target.destroy()
             case 'reload':
@@ -115,52 +121,36 @@ class Handler:
                 # CSVを読み込み直したい時に reload コマンドで再読み込みさせる
                 print('CSVの再読み込みに成功')
             case 'h' | 'help' | '?':
-                print('exit - このシェルを抜けます\nreload - CSVを再読み込みします\ngui, g - データ表示用ウィンドウを表示します\nnogui - データ表示用ウィンドウを閉じます\nqr - データ表示用ウィンドウにQRコードを表示します\nbutton, b - 強制的にスタートボタン画面に遷移し、前回の設定時間で吐水します。\nr - 強制的に待機画面に戻します\ndata - 読み込んだcsvの内容を表示します。デバッグ用です。\nh, help, ? - このヘルプを表示します')
-                # 削除した内容
-                '''
-                button, b - 状況に関わらず強制的にスタートボタンをデータ表示用ウィンドウに表示させます。\n
-                sh - 直近に取得した商品データに対応した時間吐水させるスクリプトを実行します。~/Documents/jp.ac.uClub/にOutGPIO.shというシェルスクリプトが必要です\n
-                    buttonコマンドに統合
-                control(説明なし) よくわからなかったし、たぶんなくても動きはするのでとりあえず無視
-                '''
-                # 追加した内容
-                '''
-                r - 強制的に待機画面に戻します\n    説明はなかったが実装されていたので、移植して説明書きを追加
-                '''
-
                 # なんちゃってヘルプを表示
-            case 'g' | 'gui' | '99999988':
-                # GUIを表示
-                target.deiconify()
-            case 'nogui':
-                # GUIを消す
-                target.withdraw()
+                message = 'exit - この アプリを終了します\nreload - CSVを再読み込みします\nqr - データ表示用ウィンドウにQRコードを表示します\nbutton, b - 強制的にスタートボタン画面に遷移し、\n              前回の設定時間で吐水します。\nsh - Startボタンを押すコマンド。\n       ボタンウィンドウ専用コマンドです。\nr - 強制的に待機画面に戻します\nh, help, ? - このヘルプを表示します'
+                self.UI.open_sub_window(target, message, True)
             case 'qr':
                 #qrコード表示
                 self.setup_qr_screen(target)
-            #case 'sh':
-                #System.out.println(GPIOOutput(String.valueOf(waterDispensingTimeText)));
-                #continue;
             case 'b' | 'button':
                 # スタートボタン
                 self.UI.renderUI(target, 2)
                 # 残り時間を前回実行時のデータから復元
                 self.UI.remain = self.UI.waterDispensingTime
-                #continue;
-            #case 'control':
-                #addControl();
-                #continue;
-            #case 'data':
-                # 読み込んだcsvの内容を表示
-                #from IPython.display import display
-                #dataframe = pd.DataFrame(data)
-                #display(dataframe)
+            case 'sh':
+                if self.UI.mode == 2: # ボタンウィンドウなら
+                    self.on_start_click(target)
+                else:
+                    message = 'ボタンウィンドウ専用コマンドです'
+                    self.UI.open_sub_window(target, message)
             case 'speed':
+                message = '注水速度を調整します。\nターミナルをアクティブにし、\n注水速度[ml/s]を入力して\nください。'
+                self.UI.open_sub_window(target, message)
                 #注水速度調整
-                waterSpeed = int(input(f'water speed({waterSpeed})>'))
+                self.UI.waterSpeed = int(input(f'water speed({self.UI.waterSpeed})>'))
+                message = f'注水速度: {self.UI.waterSpeed}[ml/s]'
+                self.UI.open_sub_window(target, message)
             case 'r':
                 # 強制的に待機画面へ
                 self.UI.renderUI(target, 0)
+            case '':
+                # 何もしない
+                pass
             case _:
                 # ユーザー入力された文字列に対応する商品があるか検索
                 try:
@@ -168,8 +158,8 @@ class Handler:
                     # 表示更新
                     self.UI.setProductData(target)
                 except: # 何らかのエラーが出た場合
-                    self.UI.stateMessage.config(text='入力にエラーがあります。')
-                    print('入力にエラーがあります。')
+                    message = '入力にエラーがあります。'
+                    self.UI.open_sub_window(target, message)
 
     # QRコードに対応するURLの作成(本来ここに置くべきかわからないが、timeモジュールのインポートがあるのでここに置く)
     def makeURL(self):

@@ -2,18 +2,27 @@ import os
 import tkinter as tk
 import tkinter.font as tkFont
 from PIL import Image, ImageTk
-import gpio_motor_sensor as gms
 import NoodleQR as nqr
 from NoodleHandler import Handler as nhdl
 
 
 # 色(すべての要素で統一するため、変数化)
-bg_color = '#f7f7f7'
-bg_button = '#afeeee'
-bg_button_active = '#48d1cc'
-bg_button_disable = '#eeeeee'
-border_button = '#00afcc'
-border_button_disable = '#cccccc'
+bg_color = '#f7f6e7'  # 背景色
+bg_color_sub = bg_color # サブウィンドウの背景色
+bg_button = '#ffa726'  # ボタンの背景色
+bg_button_sub = bg_button  # サブウィンドウのボタンの背景色
+bg_button_active = '#ffcc80'  # アクティブ時のボタン背景色（少し明るめのオレンジ）
+bg_button_active_sub = bg_button_active  # サブウィンドウのアクティブ時のボタン背景色
+bg_button_disable = '#eeeeee'  # 無効化ボタンの背景色
+border_button = '#4e342e'  # ボタンの枠線色
+border_button_sub = border_button  # サブウィンドウのボタンの枠線色
+border_button_disable = '#cccccc'  # 無効化ボタンの枠線色
+fg_text = '#4e342e'  # 文字色（テキスト）
+fg_text_sub = fg_text  # サブウィンドウの文字色（テキスト）
+fg_button = '#4e342e'  # ボタン文字色
+fg_button_sub = fg_button  # サブウィンドウのボタン文字色
+fg_button_disable = '#999999'  # 無効化されたテキストの色
+border_sub = fg_text  # サブウィンドウの枠線色
 
 class NoodleInterface:
     # ウィンドウで使う変数の宣言
@@ -26,10 +35,13 @@ class NoodleInterface:
         self.startTime = None # 給湯開始時刻
         self.after_id = None # QRコードから待機画面に戻すタイマーのID
         self.productData = ['N/A', 'N/A', 'N/A', 'N/A'] # 商品データ
-        self.root = self.setup_main_window()
-        self.handler = nhdl(self, csv_manager)
-        self.renderUI(self.root, 0)
-        self.root.mainloop()
+        self.root = self.setup_main_window() # ウィンドウの作成
+        self.sub_window = None # サブウィンドウ(あとからコマンド実行で作成)
+        self.handler = nhdl(self, csv_manager) # ハンドラの初期化
+        self.mode = 0 # 念の為変数にする
+        self.renderUI(self.root, 0) # 待機画面で開始する
+        self.root.after(100, self.commandEntry.focus_set())  # 100ミリ秒後に focus_set を呼ぶ
+        self.root.mainloop() # ウィンドウを表示
 
     # メインウィンドウの作成と設定
     def setup_main_window(self):
@@ -42,7 +54,7 @@ class NoodleInterface:
         # ウィンドウの装飾をなくす（フチなしにする）
         #root.overrideredirect(True)
 
-        # ウィンドウの背景色(Java版を模倣)
+        # ウィンドウの背景色
         root.configure(bg=bg_color)
 
         # デフォルトのフォントを変更
@@ -62,13 +74,13 @@ class NoodleInterface:
         self.image_label = tk.Label(target, image=self.Eigyo_png, bg=bg_color)
 
         # メッセージ
-        self.stateMessage = tk.Label(target, text='いらっしゃいませ。\nバーコードをリーダーに\nかざしてください', justify='left', bg=bg_color)
+        self.stateMessage = tk.Label(target, text='いらっしゃいませ。\nバーコードをリーダーに\nかざしてください', justify='left', fg=fg_text, bg=bg_color)
 
         # 商品情報ラベル
-        self.janText = tk.Label(target, text='コード　：N/A', bg=bg_color)
-        self.amountText = tk.Label(target, text='要求湯量：N/Aml', bg=bg_color)
-        self.timeText = tk.Label(target, text='待ち時間：N/A秒', bg=bg_color)
-        self.genreText = tk.Label(target, text='ジャンル：N/A', bg=bg_color)
+        self.janText = tk.Label(target, text='コード　：N/A', fg=fg_text, bg=bg_color)
+        self.amountText = tk.Label(target, text='要求湯量：N/Aml', fg=fg_text, bg=bg_color)
+        self.timeText = tk.Label(target, text='待ち時間：N/A秒', fg=fg_text, bg=bg_color)
+        self.genreText = tk.Label(target, text='ジャンル：N/A', fg=fg_text, bg=bg_color)
 
         # 水量調整ボタンを動的に追加
         self.buttonLD = self.add_adjust_button(target, '--', -50)
@@ -77,36 +89,36 @@ class NoodleInterface:
         self.buttonLI = self.add_adjust_button(target, '++', +50)
 
         # 水量表示
-        self.waterText = tk.Label(target, text=self.waterAmount, bg=bg_color)
+        self.waterText = tk.Label(target, text=self.waterAmount, fg=fg_text, bg=bg_color)
 
         # submitボタン(次へ進む、給湯スタート)
-        self.submitButton = tk.Button(target, text='注湯量決定', bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='flat', command=lambda:self.handler.on_submit_click(target))
+        self.submitButton = tk.Button(target, text='注湯量決定', fg=fg_button, bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='solid', borderwidth=1, command=lambda:self.handler.on_submit_click(target))
         # Homeボタン(待機画面へ)
-        self.homeButton = tk.Button(target, text='Home', bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='flat', font=('Noto Sans JP', 20), command=lambda:self.renderUI(target, 0))
+        self.homeButton = tk.Button(target, text='Home', fg=fg_button, bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='solid', borderwidth=1, font=('Noto Sans JP', 20), command=lambda:self.renderUI(target, 0))
 
         # 非表示のEntryを作成
-        commandEntry = tk.Entry(target)
-        commandEntry.place(x=1080, y=50, width=200, height=50)  # ウィンドウ外に配置
-        commandEntry.bind("<Return>", lambda event: self.handler.on_command_enter(target, commandEntry, tk.END, event)) # コマンド処理
+        self.commandEntry = tk.Entry(target)
+        self.commandEntry.place(x=1080, y=50, width=200, height=50)  # ウィンドウ外に配置
+        self.commandEntry.bind('<Return>', lambda event: self.handler.on_command_enter(target, self.commandEntry, tk.END, event)) # コマンド処理
 
 
 
     # 水量調整ボタンを動的に追加するための関数
     def add_adjust_button(self, target, label, amount):
-        button = tk.Button(target, text=label,bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='flat', command=lambda:self.handler.on_waterAdjust_click(amount))
+        button = tk.Button(target, text=label, fg=fg_button, bg=bg_button, activebackground=bg_button_active, highlightbackground=border_button, relief='solid', borderwidth=1, command=lambda:self.handler.on_waterAdjust_click(amount))
         return button
 
     # ボタンを無効化し、一定時間後に有効化する関数
     def disable_button_temporarily(self, target, button, delay):
-        button.config(state=tk.DISABLED, bg=bg_button_disable, highlightbackground=border_button_disable)  # ボタンを無効化
-        target.after(delay, lambda: button.config(state=tk.NORMAL, bg=bg_button, highlightbackground=border_button))  # delayミリ秒後にボタンを有効化
+        button.config(state=tk.DISABLED, fg=fg_button_disable, bg=bg_button_disable, highlightbackground=border_button_disable)  # ボタンを無効化
+        target.after(delay, lambda: button.config(state=tk.NORMAL, fg=fg_text, bg=bg_button, highlightbackground=border_button))  # delayミリ秒後にボタンを有効化
 
     # 各表示状況における表示の配置をする関数
     def renderUI(self, target, mode):
         match mode:
             case 1: # 水量調整
                 # モーターを止める(一応)
-                gms.stopMotor()
+                self.handler.gms.stopMotor()
                 # 商品情報表示
                 self.janText.place(x=10, y=4)
                 self.amountText.place(x=10, y=60)
@@ -132,7 +144,7 @@ class NoodleInterface:
                     self.stateMessage.place_forget()
             case 2: # 給湯スタート画面
                 # モーターを止める(一応)
-                gms.stopMotor()
+                self.handler.gms.stopMotor()
                 # 商品情報表示
                 self.janText.place(x=10, y=4)
                 self.amountText.place(x=10, y=60)
@@ -156,7 +168,7 @@ class NoodleInterface:
                 self.image_label.place_forget()
             case 3: #QRコード表示
                 # モーターを止める(一応)
-                gms.stopMotor()
+                self.handler.gms.stopMotor()
                 # メッセージ表示
                 self.stateMessage ['text'] = '画面タッチ、又は\n30秒で最初の画面に\n戻ります。'
                 self.stateMessage.place(x=10, y=520)
@@ -180,7 +192,7 @@ class NoodleInterface:
 
             case _: # デフォルト(待機状態)
                 # モーターを止める(一応)
-                gms.stopMotor()
+                self.handler.gms.stopMotor()
                 # いらっしゃいませ
                 self.stateMessage.config(text='いらっしゃいませ。\nバーコードをリーダーに\nかざしてください')
                 self.stateMessage.place(x=10, y=520)
@@ -199,24 +211,26 @@ class NoodleInterface:
                 self.buttonLI.place_forget()
                 self.submitButton.place_forget()
                 self.homeButton.place_forget()
+        # 現在のモードを変数に
+        self.mode = mode
 
     ###UIの機能###
     # csvから得た情報を反映する関数
     def setProductData(self, target):
         # 給湯中は反応しないようにする
-        if gms.motorStopped:
+        if self.handler.gms.motorStopped:
             # ラベルを更新
-            self.janText["text"] = "コード　：" + str(self.productData[0])
-            self.amountText["text"] = "要求湯量：" + str(self.productData[1]) + "ml"
-            self.timeText["text"] = "待ち時間：" + str(self.productData[2]) + "秒"
-            self.genreText["text"] = "ジャンル：" + str(self.productData[3])
-            if self.productData[1] == "N/A": # データがなければ
+            self.janText.config(text='コード　：' + str(self.productData[0]))
+            self.amountText.config(text='要求湯量：' + str(self.productData[1]) + 'ml')
+            self.timeText.config(text='待ち時間：' + str(self.productData[2]) + '秒')
+            self.genreText.config(text='ジャンル：' + str(self.productData[3]))
+            if self.productData[1] == 'N/A': # データがなければ
                 self.waterAmount = 300 # デフォルト値 300 に
             else: # データがあれば
                 self.waterAmount = self.productData[1] # 代入
 
             # 水量表示を更新
-            self.waterText["text"] = self.waterAmount
+            self.waterText.config(text=self.waterAmount)
 
             # 表示遷移を水量調整画面に
             self.renderUI(target, 1)
@@ -229,3 +243,55 @@ class NoodleInterface:
         # 時間の計算(水量(ml) * 1mlを注ぐのにかかる時間(ミリ秒))
         self.waterDispensingTime = self.waterAmount * self.waterSpeed
         self.remain = self.waterDispensingTime
+
+    ###サブウィンドウ(コマンド表示や警告など)###
+    def open_sub_window(self, target, text, small_text=False):
+        # サブウィンドウが既に存在する場合は一旦閉じる
+        if self.sub_window is not None and self.sub_window.winfo_exists():
+            self.sub_window.destroy()
+
+        # サブウィンドウを作成
+        self.sub_window = tk.Toplevel(target)
+        self.sub_window.overrideredirect(True)  # 縁無しウィンドウ
+        self.sub_window.geometry('300x200')  # サイズを設定
+
+        # ウィンドウの背景色
+        self.sub_window.configure(bg=bg_color_sub)
+
+        # ウィンドウのフォントを変更
+        sub_font = tkFont.Font(family='Noto Sans JP', size=32)
+        self.sub_window.option_add('*Font', sub_font)
+
+        # サブウィンドウの中央配置を計算
+        root_x = target.winfo_x()  # メインウィンドウのX座標
+        root_y = target.winfo_y()  # メインウィンドウのY座標
+        root_width = target.winfo_width()  # メインウィンドウの幅
+        root_height = target.winfo_height()  # メインウィンドウの高さ
+
+        sub_width = 600  # サブウィンドウの幅
+        sub_height = 400  # サブウィンドウの高さ
+        border_width = 1  # 枠線の幅
+
+        # メインウィンドウの中央位置を計算
+        pos_x = root_x + (root_width // 2) - (sub_width // 2) - border_width
+        pos_y = root_y + (root_height // 2) - (sub_height // 2) - border_width
+
+        # サブウィンドウ全体のサイズ（枠線を含む）
+        self.sub_window.geometry(f"{sub_width + border_width*2}x{sub_height + border_width*2}+{pos_x}+{pos_y}")
+
+        # 枠線の背景色を設定
+        self.sub_window.configure(bg=border_sub)  # 枠線の色
+
+        # 内側の内容を表示するフレームを作成
+        content_frame = tk.Frame(self.sub_window, bg=bg_color_sub)
+        content_frame.place(x=border_width, y=border_width, width=sub_width, height=sub_height)
+
+        # メッセージを表示
+        if small_text:  # 小さいフォントサイズ
+            message = tk.Label(content_frame, text=text, fg=fg_text_sub, bg=bg_color_sub, font=tkFont.Font(family='Noto Sans JP', size=20), justify='left')
+        else:
+            message = tk.Label(content_frame, text=text, fg=fg_text_sub, bg=bg_color_sub)
+        message.pack(expand=True)
+        # 閉じるボタンを配置
+        close_button = tk.Button(content_frame, text='閉じる', fg=fg_button_sub, bg=bg_button_sub, activebackground=bg_button_active_sub, highlightbackground=border_button_sub, relief='solid', borderwidth=1, command=self.sub_window.destroy)
+        close_button.pack(expand=True)
