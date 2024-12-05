@@ -20,7 +20,7 @@ class Handler:
         # 時間を計算
         self.UI.calcTime()
         # 表示を給湯スタート画面に
-        self.UI.mode = self.UI.renderUI(target, 2)
+        self.UI.renderUI(target, 2)
     # スタート
     def on_start_click(self, target):
         # 扉が開いている場合
@@ -74,14 +74,13 @@ class Handler:
 
     # 待機画面に戻る処理
     def returnWelcome(self, target):
-        if self.UI.mode == 3:
-            self.UI.renderUI(target, 0)
-            self.cleanup_qr_events(target)
+        self.UI.renderUI(target, 0)
+        self.cleanup_qr_events(target)
 
     # QRコード画面のセットアップ
     def setup_qr_screen(self, target):
+        target.bind("<Button-1>", lambda event: self.on_click(target, event))  # クリックイベントをバインド
         self.UI.renderUI(target, 3)
-        target.bind("<Button-1>", lambda:self.on_click(target))  # クリックイベントをバインド
         self.after_id = target.after(30000, lambda: self.returnWelcome(target))  # 30秒後に戻る処理を設定
 
     # クリックイベントのハンドラ
@@ -96,8 +95,9 @@ class Handler:
             self.after_id = None
 
     # Enterキーが押されたときにEntryの値を取得
-    def on_command_enter(self, target, entry, event):
+    def on_command_enter(self, target, entry, end, event): # end引数は、このファイルでtkinterをimportしておらず、tk.ENDが使えないために代理で使用
         command = entry.get()
+        entry.delete(0, end)  # 入力欄をクリア
         match command:
             case '99999995':
                 # ウィンドウが非表示なら
@@ -137,13 +137,13 @@ class Handler:
                 target.withdraw()
             case 'qr':
                 #qrコード表示
-                self.UI.mode = self.UI.renderUI(target, 3)
+                self.setup_qr_screen(target)
             #case 'sh':
                 #System.out.println(GPIOOutput(String.valueOf(waterDispensingTimeText)));
                 #continue;
             case 'b' | 'button':
                 # スタートボタン
-                self.UI.mode = self.UI.renderUI(target, 2)
+                self.UI.renderUI(target, 2)
                 # 残り時間を前回実行時のデータから復元
                 self.UI.remain = self.UI.waterDispensingTime
                 #continue;
@@ -160,7 +160,7 @@ class Handler:
                 waterSpeed = int(input(f'water speed({waterSpeed})>'))
             case 'r':
                 # 強制的に待機画面へ
-                self.UI.mode = self.UI.renderUI(target, 0)
+                self.UI.renderUI(target, 0)
             case _:
                 # ユーザー入力された文字列に対応する商品があるか検索
                 try:

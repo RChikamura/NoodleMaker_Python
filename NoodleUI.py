@@ -2,7 +2,6 @@ import os
 import tkinter as tk
 import tkinter.font as tkFont
 from PIL import Image, ImageTk
-from functools import partial
 import gpio_motor_sensor as gms
 import NoodleQR as nqr
 from NoodleHandler import Handler as nhdl
@@ -20,7 +19,6 @@ class NoodleInterface:
     # ウィンドウで使う変数の宣言
     def __init__(self, dir, csv_manager):
         self.current_dir = dir
-        self.mode = 3 # 現在の表示モード
         self.waterSpeed = 250 # 1mlを注ぐのにかかる時間(ミリ秒)
         self.waterAmount = 300 # 最終的な水量(デフォルト値は300ml)
         self.waterDispensingTime = 0 # 給湯時間
@@ -89,7 +87,7 @@ class NoodleInterface:
         # 非表示のEntryを作成
         commandEntry = tk.Entry(target)
         commandEntry.place(x=1080, y=50, width=200, height=50)  # ウィンドウ外に配置
-        commandEntry.bind("<Return>", lambda event: self.handler.on_command_enter(target, commandEntry, event)) # コマンド処理
+        commandEntry.bind("<Return>", lambda event: self.handler.on_command_enter(target, commandEntry, tk.END, event)) # コマンド処理
 
 
 
@@ -201,7 +199,6 @@ class NoodleInterface:
                 self.buttonLI.place_forget()
                 self.submitButton.place_forget()
                 self.homeButton.place_forget()
-        self.mode = mode # modeをインスタンスの変数に出力しておく(待機画面に戻す処理で使う)
 
     ###UIの機能###
     # csvから得た情報を反映する関数
@@ -222,7 +219,7 @@ class NoodleInterface:
             self.waterText["text"] = self.waterAmount
 
             # 表示遷移を水量調整画面に
-            self.mode = self.renderUI(target, 1)
+            self.renderUI(target, 1)
 
     # 水量から給湯時間を決定
     def calcTime(self):
