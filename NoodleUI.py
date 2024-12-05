@@ -260,6 +260,9 @@ class NoodleInterface:
         # ウィンドウの背景色
         self.sub_window.configure(bg=bg_color_sub)
 
+        # カーソルを非表示に設定
+        self.sub_window.config(cursor="none")
+
         # ウィンドウのフォントを変更
         sub_font = tkFont.Font(family='Noto Sans JP', size=32)
         self.sub_window.option_add('*Font', sub_font)
