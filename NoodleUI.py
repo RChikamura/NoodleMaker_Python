@@ -56,6 +56,9 @@ class NoodleInterface:
         # ウィンドウの背景色
         root.configure(bg=bg_color)
 
+        # カーソルを非表示に設定
+        root.config(cursor="none")
+
         # デフォルトのフォントを変更
         default_font = tkFont.Font(family='Noto Sans JP', size=32)
         root.option_add('*Font', default_font)
