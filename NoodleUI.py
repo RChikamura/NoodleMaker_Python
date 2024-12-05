@@ -52,7 +52,7 @@ class NoodleInterface:
         root.geometry('1280x720')
 
         # ウィンドウの装飾をなくす（フチなしにする）
-        #root.overrideredirect(True)
+        root.overrideredirect(True)
 
         # ウィンドウの背景色
         root.configure(bg=bg_color)
@@ -98,7 +98,7 @@ class NoodleInterface:
 
         # 非表示のEntryを作成
         self.commandEntry = tk.Entry(target)
-        self.commandEntry.place(x=1080, y=50, width=200, height=50)  # ウィンドウ外に配置
+        self.commandEntry.place(x=-300, y=-100, width=200, height=50)  # ウィンドウ外に配置
         self.commandEntry.bind('<Return>', lambda event: self.handler.on_command_enter(target, self.commandEntry, tk.END, event)) # コマンド処理
 
 
