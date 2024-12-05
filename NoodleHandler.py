@@ -143,9 +143,14 @@ class Handler:
                 message = '注水速度を調整します。\nターミナルをアクティブにし、\n注水速度[ml/s]を入力して\nください。'
                 self.UI.open_sub_window(target, message)
                 #注水速度調整
-                self.UI.waterSpeed = int(input(f'water speed({self.UI.waterSpeed})>'))
-                message = f'注水速度: {self.UI.waterSpeed}[ml/s]'
-                self.UI.open_sub_window(target, message)
+                str_water = input(f'water speed({self.UI.waterSpeed})>')
+                try:
+                    self.UI.waterSpeed = int(str_water)
+                    message = f'注水速度: {self.UI.waterSpeed}[ml/s]'
+                    self.UI.open_sub_window(target, message)
+                except: # 何らかのエラーが出た場合
+                    message = f'入力にエラーがあります。\n{str_water}'
+                    self.UI.open_sub_window(target, message)
             case 'r':
                 # 強制的に待機画面へ
                 self.UI.renderUI(target, 0)
@@ -159,7 +164,7 @@ class Handler:
                     # 表示更新
                     self.UI.setProductData(target)
                 except: # 何らかのエラーが出た場合
-                    message = '入力にエラーがあります。'
+                    message = f'入力にエラーがあります。\n{command}'
                     self.UI.open_sub_window(target, message)
 
     # QRコードに対応するURLの作成(本来ここに置くべきかわからないが、timeモジュールのインポートがあるのでここに置く)
