@@ -119,7 +119,8 @@ class Handler:
             case 'reload':
                 self.csv.getCSV(self.csv.csv_path)
                 # CSVを読み込み直したい時に reload コマンドで再読み込みさせる
-                print('CSVの再読み込みに成功')
+                message = 'CSVの再読み込みに\n成功'
+                self.UI.open_sub_window(target, message)
             case 'h' | 'help' | '?':
                 # なんちゃってヘルプを表示
                 message = 'exit - この アプリを終了します\nreload - CSVを再読み込みします\nqr - QRコードを再表示します\nbutton, b - スタートボタン画面に遷移し、\n              前回の設定時間で吐水します。\nsh - Startボタンを押すコマンド。\n       ボタンウィンドウ専用コマンドです。\nr - 強制的に待機画面に戻します\nh, help, ? - このヘルプを表示します'
@@ -136,7 +137,7 @@ class Handler:
                 if self.UI.mode == 2: # ボタンウィンドウなら
                     self.on_start_click(target)
                 else:
-                    message = 'ボタンウィンドウ専用コマンドです'
+                    message = 'ボタンウィンドウ\n専用コマンドです'
                     self.UI.open_sub_window(target, message)
             case 'speed':
                 message = '注水速度を調整します。\nターミナルをアクティブにし、\n注水速度[ml/s]を入力して\nください。'
