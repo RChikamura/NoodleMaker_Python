@@ -48,7 +48,7 @@ class NoodleInterface:
         root.title('NoodleMaker')
 
         # ウィンドウのサイズ設定
-        root.geometry('1280x720')
+        root.geometry('1280x720+0+0')
 
         # ウィンドウの装飾をなくす（フチなしにする）
         #root.overrideredirect(True)
