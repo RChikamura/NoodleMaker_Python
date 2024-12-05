@@ -51,7 +51,7 @@ class NoodleInterface:
         root.geometry('1280x720')
 
         # ウィンドウの装飾をなくす（フチなしにする）
-        root.overrideredirect(True)
+        #root.overrideredirect(True)
 
         # ウィンドウの背景色
         root.configure(bg=bg_color)
