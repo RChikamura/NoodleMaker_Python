@@ -39,7 +39,9 @@ class NoodleInterface:
         self.renderUI(self.root, 0) # 待機画面で開始する
         self.root.bind("<Map>", lambda event: self.commandEntry.focus_set())
         self.root.after(1000, self.commandEntry.focus_set())  # 100ミリ秒後に focus_set を呼ぶ
-        self.root.after(1000, lambda:print("Current focus:", self.root.focus_get()))
+        self.root.after(100, lambda:print("Current focus:", self.root.focus_get()))
+        # ウィンドウの装飾をなくす（フチなしにする）
+        self.root.after(200, self.root.overrideredirect(True))
         self.root.mainloop() # ウィンドウを表示
 
     # メインウィンドウの作成と設定
@@ -49,9 +51,6 @@ class NoodleInterface:
 
         # ウィンドウのサイズ設定
         root.geometry('1280x720+0+0')
-
-        # ウィンドウの装飾をなくす（フチなしにする）
-        root.overrideredirect(True)
 
         # ウィンドウの背景色
         root.configure(bg=bg_color)
