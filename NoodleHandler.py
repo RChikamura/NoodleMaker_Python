@@ -122,7 +122,7 @@ class Handler:
                 print('CSVの再読み込みに成功')
             case 'h' | 'help' | '?':
                 # なんちゃってヘルプを表示
-                message = 'exit - この アプリを終了します\nreload - CSVを再読み込みします\nqr - データ表示用ウィンドウにQRコードを表示します\nbutton, b - 強制的にスタートボタン画面に遷移し、\n              前回の設定時間で吐水します。\nsh - Startボタンを押すコマンド。\n       ボタンウィンドウ専用コマンドです。\nr - 強制的に待機画面に戻します\nh, help, ? - このヘルプを表示します'
+                message = 'exit - この アプリを終了します\nreload - CSVを再読み込みします\nqr - QRコードを再表示します\nbutton, b - 強制的にスタートボタン画面に遷移し、\n              前回の設定時間で吐水します。\nsh - Startボタンを押すコマンド。\n       ボタンウィンドウ専用コマンドです。\nr - 強制的に待機画面に戻します\nh, help, ? - このヘルプを表示します'
                 self.UI.open_sub_window(target, message, True)
             case 'qr':
                 #qrコード表示
